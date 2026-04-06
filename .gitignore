@@ -1,0 +1,34 @@
+## Ignorar arquivos de build e IDE
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+## AWS SAM
+.aws-sam/
+samconfig.toml
+infra/samconfig.toml
+
+## LocalStack
+.localstack/
+volume/
+
+## Publicação
+publish/
+
+## Segredos e dados sensíveis — NUNCA versionar
+appsettings.*.local.json
+.env
+.env.*
+*.env
+
+## Evidências locais (contêm Account ID, ARN, URLs reais da API)
+evidencias/
+
+## Dados de demo com referências AWS reais
+Dados/DemoSeed/manifest_*.json
+
+## AWS credentials (redundante mas seguro)
+credentials
+.aws/

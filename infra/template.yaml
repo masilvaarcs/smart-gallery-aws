@@ -1,0 +1,194 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Dotnet Serverless Gallery — Galeria inteligente de imagens com auto-tagging por IA (Rekognition), S3, DynamoDB e Lambda.
+  Infraestrutura serverless 100% no Free Tier da AWS.
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 256
+    Runtime: dotnet8
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        AWS__S3Bucket: !Ref ImagensBucket
+        AWS__DynamoDbTabela: !Ref ImagensTabela
+        AWS__UsarLocalStack: 'false'
+
+Resources:
+  # ==========================================
+  # S3 — Armazenamento de Imagens
+  # ==========================================
+  ImagensBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'smart-gallery-imagens-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: LimparMultipartIncompletos
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+            Status: Enabled
+      Tags:
+        - Key: Projeto
+          Value: SmartGallery
+        - Key: Ambiente
+          Value: Producao
+
+  # ==========================================
+  # DynamoDB — Metadados das Imagens
+  # ==========================================
+  ImagensTabela:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: SmartGallery-Imagens
+      BillingMode: PAY_PER_REQUEST  # Free Tier: 25 RCU + 25 WCU grátis
+      AttributeDefinitions:
+        - AttributeName: Id
+          AttributeType: S
+        - AttributeName: UsuarioId
+          AttributeType: S
+        - AttributeName: DataUpload
+          AttributeType: S
+      KeySchema:
+        - AttributeName: Id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UsuarioId-DataUpload-index
+          KeySchema:
+            - AttributeName: UsuarioId
+              KeyType: HASH
+            - AttributeName: DataUpload
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      Tags:
+        - Key: Projeto
+          Value: SmartGallery
+
+  # ==========================================
+  # Lambda — API Backend
+  # ==========================================
+  SmartGalleryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: SmartGallery-Api
+      Handler: SmartGallery.Api
+      CodeUri: ../src/SmartGallery.Api/
+      Description: API REST da Smart Gallery (ASP.NET Core Minimal API no Lambda)
+      Policies:
+        # S3 — Acesso ao bucket de imagens
+        - S3CrudPolicy:
+            BucketName: !Ref ImagensBucket
+        # DynamoDB — CRUD na tabela de metadados
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ImagensTabela
+        # Rekognition — Análise inteligente de imagens (auto-tagging por IA)
+        - RekognitionDetectOnlyPolicy: {}
+      Events:
+        ApiProxy:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+            ApiId: !Ref SmartGalleryHttpApi
+        ApiRoot:
+          Type: HttpApi
+          Properties:
+            Path: /
+            Method: ANY
+            ApiId: !Ref SmartGalleryHttpApi
+      Tags:
+        Projeto: SmartGallery
+
+  # ==========================================
+  # API Gateway — HTTP API (v2, mais barata)
+  # ==========================================
+  SmartGalleryHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: prod
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+      Tags:
+        Projeto: SmartGallery
+
+  # ==========================================
+  # IAM — Role customizada com least privilege
+  # ==========================================
+  SmartGalleryExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: SmartGallery-Lambda-Role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SmartGalleryPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt ImagensBucket.Arn
+                  - !Sub '${ImagensBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Scan
+                  - dynamodb:Query
+                Resource:
+                  - !GetAtt ImagensTabela.Arn
+                  - !Sub '${ImagensTabela.Arn}/index/*'
+
+# ==========================================
+# Outputs — URLs e ARNs úteis
+# ==========================================
+Outputs:
+  ApiUrl:
+    Description: URL da API Gateway
+    Value: !Sub 'https://${SmartGalleryHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod'
+  BucketName:
+    Description: Nome do bucket S3
+    Value: !Ref ImagensBucket
+  TabelaDynamoDB:
+    Description: Nome da tabela DynamoDB
+    Value: !Ref ImagensTabela
+  FunctionArn:
+    Description: ARN da Lambda Function
+    Value: !GetAtt SmartGalleryFunction.Arn

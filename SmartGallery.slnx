@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SmartGallery.Api/SmartGallery.Api.csproj" />
+    <Project Path="src/SmartGallery.Maui/SmartGallery.Maui.csproj" />
+    <Project Path="src/SmartGallery.Shared/SmartGallery.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SmartGallery.Tests/SmartGallery.Tests.csproj" />
+  </Folder>
+</Solution>

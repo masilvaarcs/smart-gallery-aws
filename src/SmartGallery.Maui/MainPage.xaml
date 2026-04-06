@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SmartGallery.Maui.MainPage"
+             Title="Smart Gallery AWS"
+             BackgroundColor="#0d1117">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="16">
+
+        <!-- Header -->
+        <VerticalStackLayout Grid.Row="0" Spacing="4" Padding="0,8">
+            <Label Text="🖼️ Smart Gallery" FontSize="28" FontAttributes="Bold" TextColor="White" />
+            <Label x:Name="LblStatus" Text="Verificando conexão..." FontSize="13" TextColor="#8b949e" />
+        </VerticalStackLayout>
+
+        <!-- Barra de Ações -->
+        <HorizontalStackLayout Grid.Row="1" Spacing="10" Padding="0,12">
+            <Button Text="📤 Upload" Clicked="OnUploadClicked"
+                    BackgroundColor="#238636" TextColor="White" CornerRadius="8" FontSize="14" />
+            <Button Text="🔄 Atualizar" Clicked="OnRefreshClicked"
+                    BackgroundColor="#21262d" TextColor="#c9d1d9" CornerRadius="8" FontSize="14" />
+            <Entry x:Name="EntryBusca" Placeholder="Buscar por tag..."
+                   PlaceholderColor="#484f58" TextColor="White" BackgroundColor="#161b22"
+                   WidthRequest="200" FontSize="14" Completed="OnBuscaCompleted" />
+            <Button Text="🔍" Clicked="OnBuscaClicked"
+                    BackgroundColor="#21262d" TextColor="#c9d1d9" CornerRadius="8" FontSize="14" />
+        </HorizontalStackLayout>
+
+        <!-- Galeria (Grid de imagens) -->
+        <CollectionView Grid.Row="2" x:Name="GaleriaView"
+                        ItemsLayout="VerticalGrid, 3"
+                        SelectionMode="Single"
+                        SelectionChanged="OnImagemSelecionada">
+            <CollectionView.EmptyView>
+                <VerticalStackLayout HorizontalOptions="Center" VerticalOptions="Center" Spacing="8">
+                    <Label Text="📷" FontSize="48" HorizontalOptions="Center" />
+                    <Label Text="Nenhuma imagem na galeria" FontSize="16" TextColor="#8b949e" HorizontalOptions="Center" />
+                    <Label Text="Clique em Upload para adicionar" FontSize="13" TextColor="#484f58" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+            </CollectionView.EmptyView>
+            <CollectionView.ItemTemplate>
+                <DataTemplate>
+                    <Border Stroke="#30363d" StrokeThickness="1" StrokeShape="RoundRectangle 8"
+                            BackgroundColor="#161b22" Margin="4" Padding="8" HeightRequest="200">
+                        <Grid RowDefinitions="*,Auto,Auto">
+                            <Image Source="{Binding UrlThumbnail}" Aspect="AspectFill" Grid.Row="0" />
+                            <Label Text="{Binding Titulo}" FontSize="13" FontAttributes="Bold"
+                                   TextColor="White" Grid.Row="1" LineBreakMode="TailTruncation" Margin="0,4,0,0" />
+                            <HorizontalStackLayout Grid.Row="2" Spacing="4">
+                                <Label Text="{Binding Formato, StringFormat='{0}'}"
+                                       FontSize="11" TextColor="#58a6ff"
+                                       BackgroundColor="#0d1117" Padding="4,2" />
+                                <Label Text="{Binding TamanhoFormatado}" FontSize="11" TextColor="#8b949e" />
+                            </HorizontalStackLayout>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+        <!-- Footer Stats -->
+        <HorizontalStackLayout Grid.Row="3" Spacing="16" Padding="0,8" HorizontalOptions="Center">
+            <Label x:Name="LblTotal" Text="0 imagens" FontSize="13" TextColor="#8b949e" />
+            <Label x:Name="LblTamanho" Text="0 KB" FontSize="13" TextColor="#8b949e" />
+            <Label Text="AWS S3 + DynamoDB" FontSize="13" TextColor="#484f58" />
+        </HorizontalStackLayout>
+
+    </Grid>
+</ContentPage>

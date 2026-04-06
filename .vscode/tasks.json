@@ -1,0 +1,56 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "AWS: Validar conexao",
+      "type": "shell",
+      "command": "aws sts get-caller-identity --profile marcos-admin --region us-east-1",
+      "problemMatcher": []
+    },
+    {
+      "label": "Projeto: Testes unitarios",
+      "type": "shell",
+      "command": "dotnet test tests/SmartGallery.Tests/SmartGallery.Tests.csproj --configuration Release",
+      "group": "test",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Projeto: SAM validate+build",
+      "type": "shell",
+      "command": "sam validate -t infra/template.yaml --profile marcos-admin --region us-east-1 ; sam build -t infra/template.yaml --profile marcos-admin --region us-east-1",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "Projeto: Evidencias (sem deploy)",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File ./Scripts/Run-Evidence.ps1 -Profile marcos-admin -Region us-east-1",
+      "problemMatcher": []
+    },
+    {
+      "label": "Projeto: Deploy + evidencias",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File ./Scripts/Run-Evidence.ps1 -Profile marcos-admin -Region us-east-1 -StackName dotnet-serverless-gallery -Deploy",
+      "problemMatcher": []
+    },
+    {
+      "label": "Projeto: Seed demo (10 internet)",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File ./Scripts/Seed-DemoData.ps1 -ApiUrl ${input:apiUrl}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Projeto: Snapshot galeria",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File ./Scripts/Export-GallerySnapshot.ps1 -ApiUrl ${input:apiUrl}",
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "apiUrl",
+      "type": "promptString",
+      "description": "URL da API Gateway (ex: https://xxxxx.execute-api.us-east-1.amazonaws.com/prod)",
+      "default": ""
+    }
+  ]
+}

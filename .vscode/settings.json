@@ -1,0 +1,8 @@
+{
+  "aws.profile": "marcos-admin",
+  "aws.region": "us-east-1",
+  "terminal.integrated.env.windows": {
+    "AWS_PROFILE": "marcos-admin",
+    "AWS_REGION": "us-east-1"
+  }
+}
