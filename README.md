@@ -280,17 +280,17 @@ dotnet test --verbosity normal
 
 ---
 
-## � Client Cross-Platform
+## 📱 Client Cross-Platform
 
 > Este projeto possui um **client .NET MAUI** que consome esta API:
 
 | Repositório | Stack | Funcionalidades |
 |---|---|---|
-| [**smart-gallery-maui**](https://github.com/MarcosSilva-Dev/smart-gallery-maui) | .NET MAUI 10 · MVVM · CommunityToolkit | Galeria, Upload com IA, Dashboard, 4 plataformas |
+| [**smart-gallery-maui**](https://github.com/masilvaarcs/smart-gallery-maui) | .NET MAUI 10 · MVVM · CommunityToolkit | Galeria, Upload com IA, Dashboard, 4 plataformas |
 
 ---
 
-## �👨‍💻 Autor
+## 👨‍💻 Autor
 
 <div align="center">
 
