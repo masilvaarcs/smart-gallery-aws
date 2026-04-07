@@ -150,14 +150,30 @@ sam build
 sam deploy --guided
 ```
 
+### ⚡ Testar a API Deployada (sem instalar nada)
+
+A API já está rodando na AWS:
+
+```powershell
+# Health check
+Invoke-RestMethod https://klgigkovh8.execute-api.us-east-1.amazonaws.com/prod/health
+
+# Listar imagens
+Invoke-RestMethod https://klgigkovh8.execute-api.us-east-1.amazonaws.com/prod/api/imagens
+
+# Estatísticas da galeria
+Invoke-RestMethod https://klgigkovh8.execute-api.us-east-1.amazonaws.com/prod/api/imagens/stats
+```
+
 ### Carga de Dados Demo
 
-```bash
+```powershell
 # Baixa 10 imagens públicas e envia para a API (com auto-tagging IA)
-./Scripts/Seed-DemoData.ps1 -ApiUrl https://YOUR-API-URL/prod
+$API = "https://klgigkovh8.execute-api.us-east-1.amazonaws.com/prod"
+./Scripts/Seed-DemoData.ps1 -ApiUrl $API
 
 # Gerar snapshot de evidências
-./Scripts/Export-GallerySnapshot.ps1 -ApiUrl https://YOUR-API-URL/prod
+./Scripts/Export-GallerySnapshot.ps1 -ApiUrl $API
 ```
 
 ---
