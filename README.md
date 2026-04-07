@@ -1,6 +1,6 @@
 # 🖼️ Dotnet Serverless Gallery
 
-> **The only serverless image gallery built with .NET 8 + AWS Lambda + AI auto-tagging.**
+> **A única galeria serverless construída com .NET 8 + AWS Lambda + auto-tagging por IA.**
 > Galeria inteligente com classificação automática de imagens via Amazon Rekognition.
 
 ![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet&logoColor=white)
@@ -9,24 +9,24 @@
 ![Amazon S3](https://img.shields.io/badge/AWS-S3-569A31?logo=amazons3&logoColor=white)
 ![DynamoDB](https://img.shields.io/badge/AWS-DynamoDB-4053D6?logo=amazondynamodb&logoColor=white)
 ![.NET MAUI](https://img.shields.io/badge/.NET%20MAUI-10.0-512BD4?logo=dotnet&logoColor=white)
-![Tests](https://img.shields.io/badge/Tests-35%20passing-00E676)
+![Testes](https://img.shields.io/badge/Testes-35%20aprovados-00E676)
 ![Free Tier](https://img.shields.io/badge/Cost-$0%20Free%20Tier-00C853)
 
 ---
 
-## 🎯 Why This Project Is Different
+## 🎯 Por Que Este Projeto é Diferente
 
-Most AWS gallery projects on GitHub use **Python or JavaScript**. This is the **only one** built with **.NET 8 running natively inside AWS Lambda** — proving that .NET is a first-class citizen for serverless workloads.
+A maioria dos projetos de galeria AWS no GitHub usa **Python ou JavaScript**. Este é o **único** construído com **.NET 8 rodando nativamente dentro do AWS Lambda** — provando que .NET é cidadão de primeira classe em workloads serverless.
 
-| Feature | This Project | Typical Gallery Projects |
+| Funcionalidade | Este Projeto | Projetos Típicos |
 |---------|:---:|:---:|
-| .NET 8 on Lambda | ✅ | ❌ Python/JS |
-| AI auto-tagging (Rekognition) | ✅ | ❌ Manual tags |
-| Native desktop client (MAUI) | ✅ | ❌ Web only |
-| LocalStack dev environment | ✅ | ⚠️ Rare |
+| .NET 8 no Lambda | ✅ | ❌ Python/JS |
+| Auto-tagging por IA (Rekognition) | ✅ | ❌ Tags manuais |
+| Client desktop nativo (MAUI) | ✅ | ❌ Somente Web |
+| Ambiente local com LocalStack | ✅ | ⚠️ Raro |
 | AWS SAM (IaC) | ✅ | ⚠️ Terraform/CDK |
-| Automated evidence scripts | ✅ | ❌ |
-| 100% AWS Free Tier | ✅ | ⚠️ Varies |
+| Scripts de evidência automáticos | ✅ | ❌ |
+| 100% AWS Free Tier | ✅ | ⚠️ Varia |
 
 ---
 
@@ -84,17 +84,17 @@ Imagem → S3 Upload → Rekognition DetectLabels → Tags IA + Tags Manuais →
 
 ## 🛠️ Stack Tecnológica
 
-| Camada | Tecnologia | Por quê .NET? |
+| Camada | Tecnologia | Por que .NET? |
 |--------|-----------|---------------|
 | **API** | ASP.NET Core 8 Minimal API | Cold start ~1.5s no Lambda, tipagem forte, DI nativo |
-| **Runtime** | AWS Lambda (dotnet8) | Managed runtime, pay-per-use, auto-scaling |
+| **Runtime** | AWS Lambda (dotnet8) | Runtime gerenciado, pague por uso, auto-scaling |
 | **IA/ML** | Amazon Rekognition | Auto-tagging sem treinar modelo, Free Tier generoso |
-| **Storage** | Amazon S3 | SSE-AES256, versionamento, lifecycle rules |
-| **Database** | Amazon DynamoDB | PAY_PER_REQUEST, GSI, single-digit ms latency |
+| **Storage** | Amazon S3 | SSE-AES256, versionamento, regras de ciclo de vida |
+| **Database** | Amazon DynamoDB | PAY_PER_REQUEST, GSI, latência de milissegundos |
 | **Desktop** | .NET MAUI 10 | Cross-platform nativo (Win/macOS/iOS/Android) |
 | **IaC** | AWS SAM (CloudFormation) | Template declarativo, deploy reproduzível |
-| **Tests** | xUnit 2.9 | 35 testes, 7 classes, 100% aprovados |
-| **Dev Local** | LocalStack | Emulação de S3 + DynamoDB, zero custo |
+| **Testes** | xUnit 2.9 | 35 testes, 7 classes, 100% aprovados |
+| **Dev Local** | LocalStack | Emulação de S3 + DynamoDB, custo zero |
 
 ### Por que .NET no Lambda?
 
@@ -102,7 +102,7 @@ A comunidade AWS é dominada por Python e JavaScript. Escolher **.NET 8** demons
 
 - **Versatilidade** — O mesmo ecossistema roda API serverless, desktop nativo (MAUI) e testes
 - **Performance** — O runtime `dotnet8` no Lambda é otimizado pela AWS com cold start competitivo
-- **Enterprise-ready** — Tipagem forte, DI nativo, middleware pipeline, SDK oficial da AWS
+- **Pronto para empresas** — Tipagem forte, DI nativo, pipeline de middleware, SDK oficial da AWS
 - **Nicho valioso** — Pouquíssimos projetos de referência existem combinando .NET + Lambda + Rekognition
 
 ---
@@ -234,11 +234,11 @@ dotnet test --verbosity normal
 
 - **S3**: Bucket privado, acesso apenas via pre-signed URLs com expiração
 - **Criptografia**: Server-Side Encryption (AES-256) em todas as imagens
-- **IAM**: Least privilege — Lambda acessa apenas bucket, tabela e Rekognition (detect-only)
+- **IAM**: Mínimo privilégio — Lambda acessa apenas bucket, tabela e Rekognition (somente detecção)
 - **Rekognition**: Política `RekognitionDetectOnlyPolicy` — somente leitura, sem acesso a dados
 - **Validação**: Tipos de arquivo (jpg/png/webp/gif) e tamanho (máx 10MB)
 - **DynamoDB**: PAY_PER_REQUEST evita DDoS de custo
-- **Graceful degradation**: Se Rekognition falhar, o upload continua sem tags IA
+- **Degradação graceful**: Se Rekognition falhar, o upload continua sem tags IA
 
 ---
 
@@ -285,18 +285,18 @@ dotnet test --verbosity normal
 
 | Serviço AWS | Conceito | Implementação |
 |-------------|----------|---------------|
-| **Lambda** | Serverless Compute | ASP.NET Core 8 hospedado como função Lambda |
-| **Rekognition** | Computer Vision | Auto-tagging de imagens com DetectLabels |
+| **Lambda** | Computação Serverless | ASP.NET Core 8 hospedado como função Lambda |
+| **Rekognition** | Visão Computacional | Auto-tagging de imagens com DetectLabels |
 | **API Gateway** | HTTP API (v2) | Proxy para Lambda com CORS |
-| **S3** | Object Storage | SSE-AES256, versionamento, lifecycle rules |
-| **DynamoDB** | NoSQL Database | Partition Key, GSI, PAY_PER_REQUEST |
-| **IAM** | Least Privilege | Políticas mínimas (S3 + DynamoDB + Rekognition detect) |
-| **SAM** | Infrastructure as Code | CloudFormation completo |
-| **Pre-Signed URLs** | Acesso temporário S3 | URLs com expiração de 60 min |
+| **S3** | Armazenamento de Objetos | SSE-AES256, versionamento, regras de ciclo de vida |
+| **DynamoDB** | Banco NoSQL | Partition Key, GSI, PAY_PER_REQUEST |
+| **IAM** | Mínimo Privilégio | Políticas mínimas (S3 + DynamoDB + Rekognition detect) |
+| **SAM** | Infraestrutura como Código | CloudFormation completo |
+| **URLs Pré-assinadas** | Acesso temporário S3 | URLs com expiração de 60 min |
 
 ---
 
-## 📱 Client Cross-Platform
+## 📱 Cliente Cross-Platform
 
 > Este projeto possui um **client .NET MAUI** que consome esta API:
 
