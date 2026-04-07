@@ -33,7 +33,8 @@ public class S3Service
             Key = key,
             InputStream = conteudo,
             ContentType = contentType,
-            ServerSideEncryptionMethod = ServerSideEncryptionMethod.AES256
+            ServerSideEncryptionMethod = ServerSideEncryptionMethod.AES256,
+            AutoCloseStream = false   // stream gerenciado pelo chamador (reutilizado p/ ExtrairDimensoes)
         };
 
         await _s3.PutObjectAsync(request, ct);

@@ -2,6 +2,26 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "▶️ Rodar API localmente (http://localhost:5050)",
+      "type": "shell",
+      "command": "$env:ASPNETCORE_ENVIRONMENT='Development'; $env:AWS_PROFILE='marcos-admin'; $env:AWS_REGION='us-east-1'; dotnet run --project src/SmartGallery.Api/SmartGallery.Api.csproj --urls http://localhost:5050",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "dotnet-api",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "Building\\.\\.\\.",
+          "endsPattern": "Now listening on:|Application started"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "label": "API — SmartGallery"
+      }
+    },
+    {
       "label": "AWS: Validar conexao",
       "type": "shell",
       "command": "aws sts get-caller-identity --profile marcos-admin --region us-east-1",

@@ -6,6 +6,7 @@ using SmartGallery.Api.Config;
 using SmartGallery.Api.Services;
 using SmartGallery.Shared.DTOs;
 using SmartGallery.Shared.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,18 +90,20 @@ api.MapPost("/", async (
     if (!request.HasFormContentType)
         return Results.BadRequest(new { erro = "Envie como multipart/form-data." });
 
+    // Lê o formulário (ASP.NET Core usa UTF-8 por padrão; CorrigirEncoding garante robustez)
     var form = await request.ReadFormAsync(ct);
     var arquivo = form.Files.GetFile("arquivo");
 
     if (arquivo is null || arquivo.Length == 0)
         return Results.BadRequest(new { erro = "Nenhum arquivo enviado. Use o campo 'arquivo'." });
 
-    var titulo = form["titulo"].ToString();
+    // Garante decodificação UTF-8 correta em todos os campos de texto
+    var titulo = CorrigirEncoding(form["titulo"].ToString());
     if (string.IsNullOrWhiteSpace(titulo))
         titulo = Path.GetFileNameWithoutExtension(arquivo.FileName);
 
-    var descricao = form["descricao"].ToString();
-    var tags = form["tags"].ToString()
+    var descricao = CorrigirEncoding(form["descricao"].ToString());
+    var tags = CorrigirEncoding(form["tags"].ToString())
         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         .ToList();
     var publica = !bool.TryParse(form["publica"], out var p) || p;
@@ -115,9 +118,20 @@ api.MapPost("/", async (
     if (arquivo.Length > 10 * 1024 * 1024)
         return Results.BadRequest(new { erro = "Arquivo excede o limite de 10MB." });
 
-    // Upload para S3
-    using var stream = arquivo.OpenReadStream();
-    var s3Key = await s3.UploadAsync(stream, arquivo.FileName, arquivo.ContentType, ct);
+    // Lê stream uma única vez em buffer (reutilizado para S3 upload + extração de dimensões)
+    using var ms = new MemoryStream();
+    await arquivo.OpenReadStream().CopyToAsync(ms, ct);
+    ms.Position = 0;
+    var s3Key = await s3.UploadAsync(ms, arquivo.FileName, arquivo.ContentType, ct);
+
+    // Extrai dimensões da imagem sem dependência externa
+    int largura = 0, altura = 0;
+    try
+    {
+        ms.Position = 0;
+        (largura, altura) = ExtrairDimensoes(ms, extensao);
+    }
+    catch { /* dimensões não críticas — continua sem elas */ }
 
     // Análise de IA — Rekognition detecta labels (objetos, cenas, conceitos)
     var tagsIa = await rekognition.AnalisarImagemAsync(s3Key, ct);
@@ -138,6 +152,8 @@ api.MapPost("/", async (
         Tags = todasTags,
         Formato = extensao.TrimStart('.'),
         TamanhoBytes = arquivo.Length,
+        Largura = largura,
+        Altura = altura,
         S3Key = s3Key,
         S3Bucket = config.S3Bucket,
         Publica = publica
@@ -300,5 +316,77 @@ app.MapGet("/health", () => Results.Ok(new
 })).WithName("HealthCheck");
 
 app.Run();
+
+// ---------------------------------------------------------------------------
+// Helpers locais
+// ---------------------------------------------------------------------------
+
+/// <summary>
+/// Detecta e corrige double-encoding Latin-1/UTF-8 que ocorre quando
+/// o cliente envia texto UTF-8 e o receptor interpreta como ISO-8859-1.
+/// Ex: "demonstraÃ§Ã£o" → "demonstração"
+/// </summary>
+static string CorrigirEncoding(string texto)
+{
+    if (string.IsNullOrEmpty(texto)) return texto;
+    try
+    {
+        var latin1 = Encoding.GetEncoding("ISO-8859-1");
+        var bytes = latin1.GetBytes(texto);
+        // Verifica se o texto parece ter sido mal-decodificado:
+        // sequências C3 xx são caracteres UTF-8 de 2 bytes
+        bool pareceDouble = bytes.Length > 1 &&
+            bytes.Take(bytes.Length - 1)
+                 .Where((b, i) => b == 0xC3 && bytes[i + 1] >= 0x80 && bytes[i + 1] <= 0xBF)
+                 .Any();
+        return pareceDouble ? Encoding.UTF8.GetString(bytes) : texto;
+    }
+    catch
+    {
+        return texto;
+    }
+}
+
+/// <summary>
+/// Extrai largura e altura de JPEG ou PNG lendo apenas os cabeçalhos,
+/// sem depender de bibliotecas externas.
+/// </summary>
+static (int largura, int altura) ExtrairDimensoes(Stream stream, string extensao)
+{
+    if (extensao is ".jpg" or ".jpeg")
+    {
+        // JPEG: percorre marcadores até encontrar SOF0/SOF2
+        var reader = new BinaryReader(stream);
+        if (reader.ReadUInt16() != 0xD8FF) return (0, 0); // não é JPEG
+        while (stream.Position < stream.Length - 8)
+        {
+            if (reader.ReadByte() != 0xFF) break;
+            byte marker = reader.ReadByte();
+            int segLen = (reader.ReadByte() << 8) | reader.ReadByte();
+            // SOF0(0xC0), SOF1(0xC1), SOF2(0xC2) contêm dimensões
+            if (marker is 0xC0 or 0xC1 or 0xC2)
+            {
+                reader.ReadByte(); // precisão
+                int h = (reader.ReadByte() << 8) | reader.ReadByte();
+                int w = (reader.ReadByte() << 8) | reader.ReadByte();
+                return (w, h);
+            }
+            stream.Seek(segLen - 2, SeekOrigin.Current);
+        }
+    }
+    else if (extensao == ".png")
+    {
+        // PNG: 8 bytes assinatura + 4 len + "IHDR" + 4 width + 4 height
+        stream.Seek(16, SeekOrigin.Begin);
+        var b = new byte[8];
+        if (stream.Read(b, 0, 8) == 8)
+        {
+            int w = (b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3];
+            int h = (b[4] << 24) | (b[5] << 16) | (b[6] << 8) | b[7];
+            return (w, h);
+        }
+    }
+    return (0, 0);
+}
 
 public partial class Program { }

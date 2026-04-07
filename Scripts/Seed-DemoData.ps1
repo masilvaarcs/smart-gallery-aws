@@ -17,16 +17,16 @@ $targetDir = Join-Path $repoRoot $OutputDir
 New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
 
 $records = @(
-    @{ Seed = "amazonia-rio"; Titulo = "Rio Amazonas ao amanhecer"; Descricao = "Imagem de demonstração com foco em natureza e escala."; Tags = "natureza,amazonia,agua" },
-    @{ Seed = "sampa-noturna"; Titulo = "Centro urbano noturno"; Descricao = "Cena urbana para validar metadados por tema."; Tags = "cidade,noturno,arquitetura" },
-    @{ Seed = "litoral-nordeste"; Titulo = "Litoral brasileiro"; Descricao = "Praia e mar para teste de busca por contexto."; Tags = "praia,mar,turismo" },
-    @{ Seed = "serra-neblina"; Titulo = "Serra com neblina"; Descricao = "Paisagem montanhosa para diversidade de coleção."; Tags = "serra,neblina,paisagem" },
-    @{ Seed = "ponte-metal"; Titulo = "Ponte metálica histórica"; Descricao = "Estrutura urbana para validar listagem e filtros."; Tags = "ponte,estrutura,urbano" },
-    @{ Seed = "floresta-densa"; Titulo = "Floresta densa"; Descricao = "Composição verde para teste de dados ambientais."; Tags = "floresta,verde,ecologia" },
-    @{ Seed = "deserto-luz"; Titulo = "Deserto com luz dura"; Descricao = "Cena árida para ampliar variedade visual da base."; Tags = "deserto,sol,geografia" },
-    @{ Seed = "porto-industrial"; Titulo = "Porto industrial"; Descricao = "Imagem temática de logística e infraestrutura."; Tags = "porto,industria,logistica" },
-    @{ Seed = "campo-aereo"; Titulo = "Campo visto do alto"; Descricao = "Perspectiva aérea para validar metadados diversos."; Tags = "aereo,campo,agro" },
-    @{ Seed = "trilha-cachoeira"; Titulo = "Trilha para cachoeira"; Descricao = "Foto de aventura para enriquecer dataset de demonstração."; Tags = "trilha,cachoeira,aventura" }
+    @{ Seed = "amazonia-rio"; Titulo = "Pôr do sol na rodovia"; Descricao = "Luz dourada sobre rodovia vista através de grade metálica de passarela."; Tags = "rodovia,pôr do sol,trânsito" },
+    @{ Seed = "sampa-noturna"; Titulo = "Coiote na neve"; Descricao = "Retrato aproximado de coiote caminhando em cenário nevado."; Tags = "animal,neve,vida selvagem" },
+    @{ Seed = "litoral-nordeste"; Titulo = "Show ao vivo"; Descricao = "Músico performando com guitarra em palco iluminado, foto em preto e branco."; Tags = "música,show,palco" },
+    @{ Seed = "serra-neblina"; Titulo = "Pico nevado ao entardecer"; Descricao = "Montanha coberta de neve sob céu rosado ao fim do dia."; Tags = "montanha,neve,paisagem" },
+    @{ Seed = "ponte-metal"; Titulo = "Trilha na floresta"; Descricao = "Caminho de terra entre árvores em floresta densa e úmida."; Tags = "trilha,floresta,natureza" },
+    @{ Seed = "floresta-densa"; Titulo = "Coqueiros tropicais"; Descricao = "Coqueiros ao vento sob céu azul em paisagem tropical."; Tags = "coqueiro,tropical,verão" },
+    @{ Seed = "deserto-luz"; Titulo = "Paredão rochoso na neblina"; Descricao = "Falésias rochosas cobertas de vegetação emergindo da neblina densa."; Tags = "neblina,rocha,vegetação" },
+    @{ Seed = "porto-industrial"; Titulo = "Horizonte ao anoitecer"; Descricao = "Silhueta de montanhas ao anoitecer com céu em gradiente azul e laranja."; Tags = "horizonte,anoitecer,silhueta" },
+    @{ Seed = "campo-aereo"; Titulo = "Porto na névoa"; Descricao = "Embarcações ancoradas em baía encoberta por neblina densa."; Tags = "barco,névoa,porto" },
+    @{ Seed = "trilha-cachoeira"; Titulo = "Abutre em voo"; Descricao = "Grande abutre com asas abertas pousando sobre rocha."; Tags = "ave,voo,vida selvagem" }
 )
 
 $baseApi = $ApiUrl.TrimEnd('/')
@@ -70,10 +70,11 @@ for ($i = 0; $i -lt $records.Count; $i++) {
         try {
             $fileContent = [System.Net.Http.StreamContent]::new($stream)
             $fileContent.Headers.ContentType = [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse("image/jpeg")
+            $utf8 = [System.Text.Encoding]::UTF8
             $multipart.Add($fileContent, "arquivo", $fileName)
-            $multipart.Add([System.Net.Http.StringContent]::new($record.Titulo), "titulo")
-            $multipart.Add([System.Net.Http.StringContent]::new($record.Descricao), "descricao")
-            $multipart.Add([System.Net.Http.StringContent]::new($record.Tags), "tags")
+            $multipart.Add([System.Net.Http.StringContent]::new($record.Titulo,  $utf8, "text/plain"), "titulo")
+            $multipart.Add([System.Net.Http.StringContent]::new($record.Descricao, $utf8, "text/plain"), "descricao")
+            $multipart.Add([System.Net.Http.StringContent]::new($record.Tags,    $utf8, "text/plain"), "tags")
 
             $httpResponse = $httpClient.PostAsync("$baseApi/api/imagens", $multipart).GetAwaiter().GetResult()
             $responseBody = $httpResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult()
