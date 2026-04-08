@@ -35,6 +35,12 @@ public class RekognitionService
     /// <returns>Lista de tags (labels) detectadas com confiança >= 70%.</returns>
     public async Task<List<string>> AnalisarImagemAsync(string s3Key, CancellationToken ct)
     {
+        if (!_config.RekognitionHabilitado)
+        {
+            _logger.LogInformation("Rekognition desabilitado (RekognitionHabilitado=false). Upload sem tags de IA.");
+            return [];
+        }
+
         try
         {
             var request = new DetectLabelsRequest

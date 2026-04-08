@@ -28,6 +28,9 @@ public class AwsConfig
     /// <summary>Se deve usar LocalStack para desenvolvimento local.</summary>
     public bool UsarLocalStack { get; set; } = true;
 
+    /// <summary>Habilita chamadas ao Rekognition (auto-tagging por IA). Desabilite para evitar custos em demo.</summary>
+    public bool RekognitionHabilitado { get; set; } = true;
+
     /// <summary>URL do LocalStack (desenvolvimento local).</summary>
     public string LocalStackUrl { get; set; } = "http://localhost:4566";
 }

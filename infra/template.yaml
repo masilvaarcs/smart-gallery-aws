@@ -16,6 +16,7 @@ Globals:
         AWS__S3Bucket: !Ref ImagensBucket
         AWS__DynamoDbTabela: !Ref ImagensTabela
         AWS__UsarLocalStack: 'false'
+        AWS__RekognitionHabilitado: 'true'
 
 Resources:
   # ==========================================
@@ -89,6 +90,7 @@ Resources:
       Handler: SmartGallery.Api
       CodeUri: ../src/SmartGallery.Api/
       Description: API REST da Smart Gallery (ASP.NET Core Minimal API no Lambda)
+      ReservedConcurrentExecutions: 10
       Policies:
         # S3 — Acesso ao bucket de imagens
         - S3CrudPolicy:
@@ -121,6 +123,9 @@ Resources:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: prod
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 20
+        ThrottlingRateLimit: 10
       CorsConfiguration:
         AllowOrigins:
           - '*'
@@ -134,6 +139,15 @@ Resources:
           - Authorization
       Tags:
         Projeto: SmartGallery
+
+  # ==========================================
+  # CloudWatch Logs — Retencao de logs
+  # ==========================================
+  SmartGalleryLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${SmartGalleryFunction}'
+      RetentionInDays: 7
 
   # ==========================================
   # IAM — Role customizada com least privilege

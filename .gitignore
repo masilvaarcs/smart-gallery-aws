@@ -19,6 +19,7 @@ publish/
 
 ## Segredos e dados sensíveis — NUNCA versionar
 appsettings.*.local.json
+appsettings.Development.json
 .env
 .env.*
 *.env
