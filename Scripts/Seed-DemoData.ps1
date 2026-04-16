@@ -12,6 +12,22 @@ $PSNativeCommandUseErrorActionPreference = $false
 
 Add-Type -AssemblyName System.Net.Http
 
+function Get-UrlSemAssinatura {
+    param([string]$Url)
+
+    if ([string]::IsNullOrWhiteSpace($Url)) {
+        return $null
+    }
+
+    try {
+        $uri = [System.Uri]$Url
+        return $uri.GetLeftPart([System.UriPartial]::Path)
+    }
+    catch {
+        return ($Url -split '\?')[0]
+    }
+}
+
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $targetDir = Join-Path $repoRoot $OutputDir
 New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
@@ -75,6 +91,7 @@ for ($i = 0; $i -lt $records.Count; $i++) {
             $multipart.Add([System.Net.Http.StringContent]::new($record.Titulo,  $utf8, "text/plain"), "titulo")
             $multipart.Add([System.Net.Http.StringContent]::new($record.Descricao, $utf8, "text/plain"), "descricao")
             $multipart.Add([System.Net.Http.StringContent]::new($record.Tags,    $utf8, "text/plain"), "tags")
+            $multipart.Add([System.Net.Http.StringContent]::new("true", $utf8, "text/plain"), "publica")
 
             $httpResponse = $httpClient.PostAsync("$baseApi/api/imagens", $multipart).GetAwaiter().GetResult()
             $responseBody = $httpResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult()
@@ -90,7 +107,7 @@ for ($i = 0; $i -lt $records.Count; $i++) {
 
         $entry.uploaded = $true
         $entry.apiId = $response.id
-        $entry.apiUrl = $response.url
+        $entry.apiUrl = Get-UrlSemAssinatura -Url $response.url
     }
 
     $manifest += [pscustomobject]$entry

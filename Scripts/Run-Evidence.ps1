@@ -99,6 +99,58 @@ function Invoke-LoggedCommand {
     }
 }
 
+function Get-UrlSemAssinatura {
+    param([string]$Url)
+
+    if ([string]::IsNullOrWhiteSpace($Url)) {
+        return $Url
+    }
+
+    try {
+        $uri = [System.Uri]$Url
+        return $uri.GetLeftPart([System.UriPartial]::Path)
+    }
+    catch {
+        return ($Url -split '\?')[0]
+    }
+}
+
+function Sanitizar-UrlsAssinadas {
+    param([object]$Payload)
+
+    if ($null -eq $Payload) {
+        return $Payload
+    }
+
+    if ($Payload -is [System.Collections.IEnumerable] -and $Payload -isnot [string]) {
+        foreach ($item in $Payload) {
+            Sanitizar-UrlsAssinadas -Payload $item | Out-Null
+        }
+        return $Payload
+    }
+
+    $props = $Payload.PSObject.Properties
+    if (-not $props) {
+        return $Payload
+    }
+
+    foreach ($prop in $props) {
+        $name = $prop.Name.ToLowerInvariant()
+        $value = $prop.Value
+
+        if ($value -is [string] -and ($name -eq "url" -or $name -eq "apiurl" -or $name -eq "urlthumbnail" -or $name -eq "urlassinada")) {
+            $Payload.$($prop.Name) = Get-UrlSemAssinatura -Url $value
+            continue
+        }
+
+        if ($value -isnot [string] -and $null -ne $value) {
+            Sanitizar-UrlsAssinadas -Payload $value | Out-Null
+        }
+    }
+
+    return $Payload
+}
+
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $evidenceRoot = Join-Path $repoRoot "evidencias"
 $runId = Get-Date -Format "yyyyMMdd_HHmmss"
@@ -178,6 +230,7 @@ if ($ApiUrl) {
 
     $results += Run-Step -Name "Integration List Images" -Action {
         $images = Invoke-RestMethod -Method Get -Uri "$base/api/imagens" -TimeoutSec 30
+        $images = Sanitizar-UrlsAssinadas -Payload $images
         $images | ConvertTo-Json -Depth 20 | Set-Content -Path (Join-Path $runDir "08_listagem.json")
     }
 

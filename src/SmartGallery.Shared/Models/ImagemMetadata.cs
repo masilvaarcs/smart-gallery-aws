@@ -39,11 +39,11 @@ public class ImagemMetadata
     public string S3Bucket { get; set; } = string.Empty;
 
     /// <summary>ID do usuário que fez upload.</summary>
-    public string UsuarioId { get; set; } = "demo-user";
+    public string UsuarioId { get; set; } = "anon-user";
 
     /// <summary>Data/hora do upload (UTC ISO 8601).</summary>
     public DateTime DataUpload { get; set; } = DateTime.UtcNow;
 
     /// <summary>Se a imagem é pública.</summary>
-    public bool Publica { get; set; } = true;
+    public bool Publica { get; set; } = false;
 }

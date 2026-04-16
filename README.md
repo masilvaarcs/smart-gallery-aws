@@ -239,6 +239,7 @@ dotnet test --verbosity normal
 - **Validação**: Tipos de arquivo (jpg/png/webp/gif) e tamanho (máx 10MB)
 - **DynamoDB**: PAY_PER_REQUEST evita DDoS de custo
 - **Degradação graceful**: Se Rekognition falhar, o upload continua sem tags IA
+- **Privacidade/LGPD**: diretrizes operacionais em `docs/PRIVACIDADE_E_LGPD.md`
 
 ---
 

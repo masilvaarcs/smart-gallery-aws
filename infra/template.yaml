@@ -17,6 +17,7 @@ Globals:
         AWS__DynamoDbTabela: !Ref ImagensTabela
         AWS__UsarLocalStack: 'false'
         AWS__RekognitionHabilitado: 'true'
+        AWS__CorsOrigensPermitidas: 'http://localhost:5123,http://localhost:5050,http://localhost:5221'
 
 Resources:
   # ==========================================
@@ -128,7 +129,9 @@ Resources:
         ThrottlingRateLimit: 10
       CorsConfiguration:
         AllowOrigins:
-          - '*'
+          - 'http://localhost:5123'
+          - 'http://localhost:5050'
+          - 'http://localhost:5221'
         AllowMethods:
           - GET
           - POST

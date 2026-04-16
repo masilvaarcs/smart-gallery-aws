@@ -25,8 +25,8 @@ public class ImagemMetadataTests
     {
         var img = new ImagemMetadata();
 
-        Assert.True(img.Publica);
-        Assert.Equal("demo-user", img.UsuarioId);
+        Assert.False(img.Publica);
+        Assert.Equal("anon-user", img.UsuarioId);
         Assert.Empty(img.Tags);
         Assert.Empty(img.Titulo);
         Assert.Empty(img.Descricao);
@@ -156,7 +156,7 @@ public class SmartGalleryDtoTests
 
         Assert.Null(req.Descricao);
         Assert.Null(req.Tags);
-        Assert.True(req.Publica);
+        Assert.False(req.Publica);
     }
 
     [Fact]
@@ -193,7 +193,7 @@ public class SmartGalleryDtoTests
             800, 600,
             "https://url-assinada.com",
             "https://thumb.com",
-            "user1", DateTime.UtcNow, true);
+            DateTime.UtcNow, true);
 
         Assert.Equal(800, resp.Largura);
         Assert.Equal(600, resp.Altura);

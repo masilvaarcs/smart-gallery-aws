@@ -5,7 +5,7 @@ public record UploadImagemRequest(
     string Titulo,
     string? Descricao = null,
     List<string>? Tags = null,
-    bool Publica = true
+    bool Publica = false
 );
 
 /// <summary>Response — Resultado do upload.</summary>
@@ -31,7 +31,6 @@ public record ImagemDetalheResponse(
     int Altura,
     string UrlAssinada,
     string UrlThumbnail,
-    string UsuarioId,
     DateTime DataUpload,
     bool Publica
 );

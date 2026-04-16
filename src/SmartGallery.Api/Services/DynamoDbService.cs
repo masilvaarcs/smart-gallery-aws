@@ -240,6 +240,6 @@ public class DynamoDbService
         S3Bucket = item.GetValueOrDefault("S3Bucket")?.S ?? "",
         UsuarioId = item.GetValueOrDefault("UsuarioId")?.S ?? "",
         DataUpload = DateTime.TryParse(item.GetValueOrDefault("DataUpload")?.S, out var dt) ? dt : DateTime.MinValue,
-        Publica = item.GetValueOrDefault("Publica")?.BOOL ?? true
+        Publica = item.GetValueOrDefault("Publica")?.BOOL ?? false
     };
 }

@@ -54,11 +54,48 @@ builder.Services.AddSingleton<RekognitionService>();
 // CORS para MAUI
 builder.Services.AddCors(options =>
 {
+    var origens = (awsConfig.CorsOrigensPermitidas ?? string.Empty)
+        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
     options.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+    {
+        if (origens.Length == 0)
+        {
+            policy.WithOrigins("http://localhost:5123", "http://localhost:5050", "http://localhost:5221");
+        }
+        else
+        {
+            policy.WithOrigins(origens);
+        }
+
+        policy.WithMethods("GET", "POST", "DELETE", "OPTIONS")
+              .WithHeaders("Content-Type", "Authorization");
+    });
 });
 
 var app = builder.Build();
+
+app.UseExceptionHandler(handler =>
+{
+    handler.Run(async context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json; charset=utf-8";
+        await context.Response.WriteAsJsonAsync(new { erro = "Erro interno. Tente novamente em instantes." });
+    });
+});
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+    await next();
+});
 
 // Inicializar infraestrutura (criar bucket/tabela em dev)
 using (var scope = app.Services.CreateScope())
@@ -106,7 +143,7 @@ api.MapPost("/", async (
     var tags = CorrigirEncoding(form["tags"].ToString())
         .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         .ToList();
-    var publica = !bool.TryParse(form["publica"], out var p) || p;
+    var publica = bool.TryParse(form["publica"], out var p) && p;
 
     // Validar tipo de arquivo
     var formatosPermitidos = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
@@ -186,8 +223,9 @@ api.MapGet("/", async (
     CancellationToken ct) =>
 {
     var (imagens, proximo) = await dynamoDb.ListarAsync(limite ?? 20, token, ct);
+    var imagensPublicas = imagens.Where(i => i.Publica).ToList();
 
-    var lista = imagens.Select(img => new ImagemResumoResponse(
+    var lista = imagensPublicas.Select(img => new ImagemResumoResponse(
         img.Id,
         img.Titulo,
         img.Formato,
@@ -213,6 +251,9 @@ api.MapGet("/{id}", async (
     if (img is null)
         return Results.NotFound(new { erro = "Imagem não encontrada." });
 
+    if (!img.Publica)
+        return Results.NotFound(new { erro = "Imagem não encontrada." });
+
     return Results.Ok(new ImagemDetalheResponse(
         img.Id,
         img.Titulo,
@@ -224,7 +265,6 @@ api.MapGet("/{id}", async (
         img.Altura,
         s3.GerarUrlAssinada(img.S3Key),
         s3.GerarUrlAssinada(img.S3Key), // thumbnail = mesma imagem por ora
-        img.UsuarioId,
         img.DataUpload,
         img.Publica
     ));
@@ -268,6 +308,8 @@ api.MapGet("/busca", async (
     else
         return Results.BadRequest(new { erro = "Informe 'tag' ou 'termo' para busca." });
 
+    resultados = resultados.Where(i => i.Publica).ToList();
+
     var lista = resultados.Select(img => new ImagemResumoResponse(
         img.Id,
         img.Titulo,
@@ -286,14 +328,17 @@ api.MapGet("/busca", async (
 // GET /api/imagens/stats — Estatísticas da galeria
 api.MapGet("/stats", async (DynamoDbService dynamoDb, CancellationToken ct) =>
 {
-    var (total, totalBytes) = await dynamoDb.ContarAsync(ct);
     var (imagens, _) = await dynamoDb.ListarAsync(1000, null, ct);
+    var imagensPublicas = imagens.Where(i => i.Publica).ToList();
 
-    var porFormato = imagens
+    var total = imagensPublicas.Count;
+    var totalBytes = imagensPublicas.Sum(i => i.TamanhoBytes);
+
+    var porFormato = imagensPublicas
         .GroupBy(i => i.Formato)
         .ToDictionary(g => g.Key, g => g.Count());
 
-    var tagsPopulares = imagens
+    var tagsPopulares = imagensPublicas
         .SelectMany(i => i.Tags)
         .GroupBy(t => t)
         .OrderByDescending(g => g.Count())

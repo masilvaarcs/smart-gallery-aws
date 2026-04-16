@@ -33,4 +33,11 @@ public class AwsConfig
 
     /// <summary>URL do LocalStack (desenvolvimento local).</summary>
     public string LocalStackUrl { get; set; } = "http://localhost:4566";
+
+    /// <summary>
+    /// Origens permitidas no CORS (separadas por virgula).
+    /// Ex.: "http://localhost:5123,https://app.exemplo.com"
+    /// </summary>
+    public string CorsOrigensPermitidas { get; set; } =
+        "http://localhost:5123,http://localhost:5050,http://localhost:5221";
 }
